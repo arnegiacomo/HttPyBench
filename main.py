@@ -8,50 +8,66 @@ import typer as typer
 from typing import Optional
 import pyperclip
 import uncurl
+import threading
 
-DEFAULT_FILE = 'Reads value in clipboard'
 DEFAULT_REPEATS = 10
 DEFAULT_THREADS = 1
 DEFAULT_REFRESHTIME = 5
 
 
-def run_benchmarks(repeats, threads, refreshtime, context):
+def run_benchmarks(context, repeats, refreshtime):
     url = context.url
     cookies = context.cookies
     headers = context.headers
     data = context.data
     payload = json.loads(data)
 
+    response_times = []
+
     for i in range(repeats):
         start_time = time.time()
-        print('Sending HTTP request: ', url)
 
         response = requests.post(
             url,
             cookies=cookies,
             headers=headers,
-            json=json,
+            json=payload,
         )
 
         end_time = time.time()
         delta_time = end_time - start_time
 
-        print('Response status code:', response.status_code)
-        print('Response time:', delta_time, 'seconds')
+        response_times.append(delta_time)
+        print(f"[{threading.current_thread().name}] Sent request to {url}")
+        print(f"[{threading.current_thread().name}] Response status code: {response.status_code}")
+        print(f"[{threading.current_thread().name}] Response time: {delta_time:.2f} seconds")
 
         time.sleep(refreshtime)
 
+    average_response_time = sum(response_times) / len(response_times)
+    median_response_time = statistics.median(response_times)
+    timestamp = datetime.now()
+
+
+def start_threads(context, repeats, refreshtime, number_of_threads):
+    threads = []
+
+    for i in range(number_of_threads):
+        thread = threading.Thread(target=run_benchmarks, args=(context, repeats, refreshtime), name=str(i))
+        thread.start()
+        threads.append(thread)
+
+
 def main(
-        file: Optional[typer.FileText] = typer.Option(None, "--file", "-f", help='Path to file containing a cURL command to run.'),
+        file: Optional[typer.FileText] = typer.Argument(None, help='Path to file containing a cURL command to run. Will use clipboard value if not provided. \033[1mMust only contain a single valid cURL command!\033[0m'),
         repeats: int = typer.Option(DEFAULT_REPEATS, "--repeats", "-r", help='Number of times to repeat cURL command.'),
         threads: int = typer.Option(DEFAULT_THREADS, "--threads", "-t", help='Number of threads to run cURL commands in parallel.'),
         refreshtime: int = typer.Option(DEFAULT_REFRESHTIME, "--refreshtime", help='Number of seconds between cURL commands.'),
-        appname: str = typer.Option(None, "--name", help='Name of application.'),
-        comment: str = typer.Option(None, "--comment", help='Optional comments.'),
-
+        appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
+        comment: str = typer.Option(None, "--comment", "-c", help='Optional comments.'),
 ):
 
-    if file:
+    if file is not None:
         # If provided with file, read the contents of the file
         curl = file.read()
     else:
@@ -60,22 +76,18 @@ def main(
 
     context = uncurl.parse_context(curl)
 
-    url = context.url
-    cookies = context.cookies
-    headers = context.headers
-    data = context.data
-    payload = json.loads(data)
-
     print("=" * 40)
-    print(f"{'HttPyBench configuration':^40}")
+    print(f"{'HttPyBench':^40}")
     print("=" * 40)
-    print(f"{'URL:':<15}{url}")
+    print(f"{'URL:':<15}{context.url}")
     print(f"{'Repeats:':<15}{repeats}")
     print(f"{'Threads:':<15}{threads}")
     print(f"{'App name:':<15}{appname}")
     print(f"{'Comments':<15}{comment}")
     print(f"{'Refresh time:':<15}{refreshtime}")
     print("=" * 40)
+
+    start_threads(context, repeats, refreshtime, threads)
 
 
 if __name__ == "__main__":
@@ -86,7 +98,7 @@ if __name__ == "__main__":
 # print(comment)
 #
 #
-# requestTimeList = []
+#
 #
 #
 #
