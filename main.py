@@ -12,10 +12,14 @@ import queue
 
 DEFAULT_REQUESTS = 10
 DEFAULT_THREADS = 1
+DEFAULT_THREAD_CREATION_DELAY = 0
 DEFAULT_REFRESHTIME = 5
 
+result_queue = queue.Queue()
+worker_threads = []
 
-def benchmark_worker(result_queue, context, requests, refreshtime):
+
+def benchmark_worker(context, requests, refreshtime):
     url = context.url
     method = context.method
     cookies = context.cookies
@@ -59,21 +63,14 @@ def benchmark_worker(result_queue, context, requests, refreshtime):
         print(f"[{threading.current_thread().name}] No successful {method} requests to {url}")
 
 
-def start_threads(context, requests, refreshtime, number_of_threads):
-    result_queue = queue.Queue()
-    threads = []
+def start_threads(context, requests, refreshtime, number_of_threads, thread_creation_delay):
 
     for i in range(number_of_threads):
-        thread = threading.Thread(target=benchmark_worker, args=(result_queue, context, requests, refreshtime),
+        thread = threading.Thread(target=benchmark_worker, args=(context, requests, refreshtime),
                                   name=f"Worker thread {i}")
         thread.start()
-        threads.append(thread)
-
-    # wait for all threads to finish
-    for t in threads:
-        t.join()
-
-    print("Queue: ", result_queue)
+        worker_threads.append(thread)
+        time.sleep(thread_creation_delay)
 
 
 def main(
@@ -82,6 +79,8 @@ def main(
         requests: int = typer.Option(DEFAULT_REQUESTS, "--requests", "-r", help='Number of times to run cURL command.', min=1),
         threads: int = typer.Option(DEFAULT_THREADS, "--threads", "-t",
                                     help='Number of threads to run cURL commands in parallel.', min=1),
+        thread_creation_delay: int = typer.Option(DEFAULT_THREAD_CREATION_DELAY, "--delay", "-d",
+                                    help='Delay between creation of worker threads.', min=0),
         refreshtime: int = typer.Option(DEFAULT_REFRESHTIME, "--refreshtime",
                                         help='Number of seconds between cURL commands.', min=0),
         appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
@@ -99,15 +98,22 @@ def main(
     print("=" * 40)
     print(f"{'HttPyBench':^40}")
     print("=" * 40)
-    print(f"{'URL:':<15}{context.url}")
-    print(f"{'Request amount:':<15}{requests}")
-    print(f"{'Threads:':<15}{threads}")
-    print(f"{'App name:':<15}{appname}")
-    print(f"{'Comments':<15}{comment}")
-    print(f"{'Refresh time:':<15}{refreshtime}")
+    print(f"{'URL:':<25}{context.url}")
+    print(f"{'Request amount:':<25}{requests}")
+    print(f"{'Threads:':<25}{threads}")
+    print(f"{'Thread creation delay:':<25}{thread_creation_delay}")
+    print(f"{'App name:':<25}{appname}")
+    print(f"{'Comments':<25}{comment}")
+    print(f"{'Refresh time:':<25}{refreshtime}")
     print("=" * 40)
 
-    start_threads(context, requests, refreshtime, threads)
+    start_threads(context, requests, refreshtime, threads, thread_creation_delay)
+
+    # wait for all threads to finish
+    for t in worker_threads:
+        t.join()
+
+    # TODO saving data etc...
 
 
 if __name__ == "__main__":
