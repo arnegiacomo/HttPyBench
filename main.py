@@ -25,7 +25,9 @@ def benchmark_worker(context, requests, refreshtime):
     cookies = context.cookies
     headers = context.headers
     data = context.data
-    payload = json.loads(data)
+    payload = {}
+    if data:
+        payload = json.loads(data)
 
     response_times = []
 
