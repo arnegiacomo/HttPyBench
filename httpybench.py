@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import requests as r
 import time
 import json
@@ -27,7 +28,7 @@ def benchmark_worker(context, requests, refreshtime):
     cookies = context.cookies
     headers = context.headers
     data = context.data
-    payload = {}
+    payload = None
     if data:
         payload = json.loads(data)
 
@@ -73,7 +74,7 @@ def benchmark_worker(context, requests, refreshtime):
         "Fastest response": min(response_times),
         "Longest response": max(response_times),
         "Successful responses": successes,
-        "Success rate": success_percentage,
+        "Success rate": str(success_percentage) + "%",
         "Response times": response_times
     }
 
@@ -162,10 +163,10 @@ def start_threads(context, requests, refreshtime, number_of_threads, thread_crea
 def main(
         file: Optional[typer.FileText] = typer.Argument(None,
                                                         help='Path to file containing a cURL command to run. Will use clipboard value if not provided. \033[1mMust only contain a single valid cURL command!\033[0m'),
-        requests: int = typer.Option(DEFAULT_REQUESTS, "--requests", "-r", help='Number of times to run cURL command.',
+        requests: int = typer.Option(DEFAULT_REQUESTS, "--requests", "-r", help='Number of times to run cURL command  on each worker thread.',
                                      min=1),
         threads: int = typer.Option(DEFAULT_THREADS, "--threads", "-t",
-                                    help='Number of threads to run cURL commands in parallel.', min=1),
+                                    help='Number of worker threads to run cURL commands in parallel.', min=1),
         thread_creation_delay: int = typer.Option(DEFAULT_THREAD_CREATION_DELAY, "--delay", "-d",
                                                   help='Delay between creation of worker threads.', min=0),
         refreshtime: int = typer.Option(DEFAULT_REFRESHTIME, "--refreshtime",
