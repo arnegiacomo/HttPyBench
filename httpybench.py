@@ -16,7 +16,6 @@ DEFAULT_REQUESTS = 10
 DEFAULT_THREADS = 1
 DEFAULT_THREAD_CREATION_DELAY = 0
 DEFAULT_REFRESHTIME = 5
-DEFAULT_SAVEFILE = "results.json"
 
 result_queue = queue.Queue()
 worker_threads = []
@@ -97,6 +96,9 @@ def print_results(benchmark_time):
 
 def save_results(benchmark_info, savefile):
 
+    if savefile is None:
+        return
+
     result_list = list(result_queue.queue)
     result_list.insert(0, benchmark_info)
 
@@ -170,7 +172,7 @@ def main(
                                         help='Number of seconds between cURL commands.', min=0),
         appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
         comment: str = typer.Option(None, "--comment", "-c", help='Optional comments.'),
-        savefile: str = typer.Option(DEFAULT_SAVEFILE, "--savefile", "-s", help='File to save results in json format.'),
+        savefile: str = typer.Option(None, "--savefile", "-s", help='File to save results in json format. Results will not be saved if omitted.'),
 
 ):
     f = Figlet(font='slant')
