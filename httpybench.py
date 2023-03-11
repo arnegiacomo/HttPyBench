@@ -68,13 +68,13 @@ def benchmark_worker(context, requests, refreshtime):
     success_percentage = successes / requests * 100
 
     result = {
+        "Thread": threading.current_thread().name,
         "Average response time": average_response_time,
         "Median response time": median_response_time,
         "Fastest response": min(response_times),
         "Longest response": max(response_times),
         "Successful responses": successes,
         "Success rate": success_percentage,
-        "Thread": threading.current_thread().name,
         "Response times": response_times
     }
 
@@ -95,9 +95,10 @@ def print_results(benchmark_time):
     print(table)
 
 
-def save_results(savefile):
+def save_results(benchmark_info, savefile):
 
     result_list = list(result_queue.queue)
+    result_list.insert(0, benchmark_info)
 
     try:
         with open(savefile, "r+") as f:
@@ -183,6 +184,16 @@ def main(
         curl = file.read().encode().decode('unicode_escape')
 
     context = uncurl.parse_context(curl)
+    benchmark_info = {
+        "Application name": appname,
+        "Comment": comment,
+        "Time": datetime.now(),
+        "Context": context,
+        "Number of requests": requests,
+        "Number of threads": threads,
+        "Thread creation delay": thread_creation_delay,
+        "Time between requests": refreshtime
+    }
 
     print_run_info(context, requests, threads, thread_creation_delay, appname, comment, refreshtime)
 
@@ -192,7 +203,7 @@ def main(
     for t in worker_threads:
         t.join()
 
-    save_results(savefile)
+    save_results(benchmark_info, savefile)
 
 
 if __name__ == "__main__":
