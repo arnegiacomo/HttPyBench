@@ -11,11 +11,13 @@ value stored in your clipboard.
 ## Example
 ___
 
-`python httpybench.py example_curl.txt`
+```bash
+$ python httpybench.py example_curl.txt
+```
 
 ### Result:
 
-``` 
+```console
 +-----------------+-------------------------+------------------------+--------------------+--------------------+------------------------+----------------+
 | Thread          |   Average response time |   Median response time |   Fastest response |   Longest response |   Successful responses | Success rate   |
 +=================+=========================+========================+====================+====================+========================+================+
@@ -25,8 +27,11 @@ ___
 
 ## Usage
 ___
-
+```bash
+$ python httpybench.py --help
 ```
+
+```console
 Usage: httpybench.py [OPTIONS] [FILE]
 
 Arguments:
