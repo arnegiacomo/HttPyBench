@@ -73,7 +73,8 @@ def benchmark_worker(context, requests, refreshtime):
         "Longest response": max(response_times),
         "Successful responses": successes,
         "Success rate": success_percentage,
-        "Thread": threading.current_thread().name
+        "Thread": threading.current_thread().name,
+        "Response times": response_times
     }
 
     result_queue.put(result)
@@ -81,16 +82,44 @@ def benchmark_worker(context, requests, refreshtime):
     print(f"[{threading.current_thread().name}] has finished!")
 
 
-def print_results():
-    print()
-    result_list = list(result_queue.queue)
+def print_results(benchmark_time):
+    print(f"\nBenchmarks finished!")
+    print(f"Total benchmark time: {benchmark_time}\n")
+    result_list = []
+    for result in result_queue.queue:
+        result_without_response_times = {key: value for key, value in result.items() if key != "Response times"}
+        result_list.append(result_without_response_times)
+
     table = tabulate(result_list, headers="keys", tablefmt="grid")
     print(table)
 
 
+def save_results():
+    filename = "results.json"
+    result_list = list(result_queue.queue)
+
+    try:
+        with open(filename, "r+") as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = []
+
+            existing_data.append(result_list)
+            f.seek(0)
+            json.dump(existing_data, f, indent=4, default=str)
+            f.truncate()
+    except FileNotFoundError:
+        with open(filename, "w") as f:
+            existing_data = [result_list]
+            json.dump(existing_data, f, indent=4, default=str)
+    finally:
+        f.close()
+
+
 def print_run_info(context, requests, threads, thread_creation_delay, appname, comment, refreshtime):
-    # Truncate the URL if it's longer than MAX_URL_WIDTH characters
-    truncated_url = context.url[:40] + "..." if len(context.url) > 40 else context.url
+    # Truncate the URL if it's longer than 60 characters
+    truncated_url = context.url[:60] + "..." if len(context.url) > 60 else context.url
 
     table = [
         ["URL:", truncated_url],
@@ -103,11 +132,12 @@ def print_run_info(context, requests, threads, thread_creation_delay, appname, c
     ]
 
     print(tabulate(table, colalign=["center", "left"], tablefmt="grid"))
-    print("")
 
 
 def start_threads(context, requests, refreshtime, number_of_threads, thread_creation_delay):
     before_requests = datetime.now()
+
+    print(f"\nStarting benchmarks...\n")
 
     for i in range(number_of_threads):
         thread = threading.Thread(target=benchmark_worker, args=(context, requests, refreshtime),
@@ -122,7 +152,8 @@ def start_threads(context, requests, refreshtime, number_of_threads, thread_crea
     after_requests = datetime.now()
     benchmark_time = after_requests - before_requests
 
-    print_results()
+    print_results(benchmark_time)
+
 
 
 def main(
@@ -159,38 +190,8 @@ def main(
     for t in worker_threads:
         t.join()
 
-    # TODO saving data etc...
+    save_results()
 
 
 if __name__ == "__main__":
     typer.run(main)
-
-# info = {
-#     "appName": appName,
-#     "comment": comment,
-#     "dateTime": dateTime,
-#     "requestTimeList": requestTimeList,
-#     "averageRequestTime": averageRequestTime,
-#     "medianRequestTime": medianRequestTime
-# }
-#
-# filename = "results.json"
-#
-# try:
-#     with open(filename, "r+") as f:
-#         try:
-#             existing_data = json.load(f)
-#         except json.JSONDecodeError:
-#             existing_data = []
-#
-#         existing_data.append(info)
-#         f.seek(0)
-#         json.dump(existing_data, f, indent=4, default=str)
-#         f.truncate()
-# except FileNotFoundError:
-#     with open(filename, "w") as f:
-#         existing_data = [info]
-#         json.dump(existing_data, f, indent=4, default=str)
-# finally:
-#     f.close()
-#
