@@ -18,8 +18,7 @@ DEFAULT_THREADS = 1
 DEFAULT_THREAD_CREATION_DELAY = 0
 DEFAULT_REFRESHTIME = 5
 
-result_queue = queue.Queue()
-worker_threads = []
+RESULT_QUEUE = queue.Queue()
 
 
 def benchmark_worker(context, requests, refreshtime):
@@ -78,7 +77,7 @@ def benchmark_worker(context, requests, refreshtime):
         "Response times": response_times
     }
 
-    result_queue.put(result)
+    RESULT_QUEUE.put(result)
 
     print(f"[{threading.current_thread().name}] has finished!")
 
@@ -87,7 +86,7 @@ def print_results(benchmark_time):
     print(f"\nBenchmarks finished!")
     print(f"Total benchmark time: {benchmark_time}\n")
     result_list = []
-    for result in result_queue.queue:
+    for result in RESULT_QUEUE.queue:
         result_without_response_times = {key: value for key, value in result.items() if key != "Response times"}
         result_list.append(result_without_response_times)
 
@@ -96,11 +95,10 @@ def print_results(benchmark_time):
 
 
 def save_results(benchmark_info, savefile):
-
     if savefile is None:
         return
 
-    result_list = list(result_queue.queue)
+    result_list = list(RESULT_QUEUE.queue)
     result_list.insert(0, benchmark_info)
 
     try:
@@ -137,13 +135,11 @@ def print_run_info(context, requests, threads, thread_creation_delay, appname, c
     ]
 
     print(tabulate(table, colalign=["center", "left"], tablefmt="grid"))
-
-
-def start_threads(context, requests, refreshtime, number_of_threads, thread_creation_delay):
-    before_requests = datetime.now()
-
     print(f"\nStarting benchmarks...\n")
 
+
+def run_threads(context, requests, refreshtime, number_of_threads, thread_creation_delay):
+    worker_threads = []
     for i in range(number_of_threads):
         thread = threading.Thread(target=benchmark_worker, args=(context, requests, refreshtime),
                                   name=f"Worker thread {i}")
@@ -154,16 +150,12 @@ def start_threads(context, requests, refreshtime, number_of_threads, thread_crea
     for thread in worker_threads:
         thread.join()
 
-    after_requests = datetime.now()
-    benchmark_time = after_requests - before_requests
-
-    print_results(benchmark_time)
-
 
 def main(
         file: Optional[typer.FileText] = typer.Argument(None,
                                                         help='Path to file containing a cURL command to run. Will use clipboard value if not provided. \033[1mMust only contain a single valid cURL command!\033[0m'),
-        requests: int = typer.Option(DEFAULT_REQUESTS, "--requests", "-r", help='Number of times to run cURL command  on each worker thread.',
+        requests: int = typer.Option(DEFAULT_REQUESTS, "--requests", "-r",
+                                     help='Number of times to run cURL command  on each worker thread.',
                                      min=1),
         threads: int = typer.Option(DEFAULT_THREADS, "--threads", "-t",
                                     help='Number of worker threads to run cURL commands in parallel.', min=1),
@@ -173,7 +165,8 @@ def main(
                                         help='Number of seconds between cURL commands.', min=0),
         appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
         comment: str = typer.Option(None, "--comment", "-c", help='Optional comments.'),
-        savefile: str = typer.Option(None, "--savefile", "-s", help='File to save results in json format. Results will not be saved if omitted.'),
+        savefile: str = typer.Option(None, "--savefile", "-s",
+                                     help='File to save results in json format. Results will not be saved if omitted.'),
 
 ):
     f = Figlet(font='slant')
@@ -200,12 +193,14 @@ def main(
 
     print_run_info(context, requests, threads, thread_creation_delay, appname, comment, refreshtime)
 
-    start_threads(context, requests, refreshtime, threads, thread_creation_delay)
+    before_requests = datetime.now()
 
-    # wait for all threads to finish
-    for t in worker_threads:
-        t.join()
+    run_threads(context, requests, refreshtime, threads, thread_creation_delay)
 
+    after_requests = datetime.now()
+    benchmark_time = after_requests - before_requests
+
+    print_results(benchmark_time)
     save_results(benchmark_info, savefile)
 
 
