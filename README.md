@@ -1,7 +1,6 @@
 # HttPyBench - Benchmark your HTTP applications response times
-___
+
 ## Description
-___
 A simple yet customisable CLI-based python script to benchmark cURL commands to your web applications. Uses 
 [uncurl](https://github.com/spulec/uncurl) to parse cURL commands to python requests. 
 
@@ -9,7 +8,6 @@ Pass a file containing a cURL command as an argument, and the script will handle
 value stored in your clipboard.
 
 ## Example
-___
 
 ```bash
 $ python httpybench.py example_curl.txt
@@ -26,7 +24,6 @@ $ python httpybench.py example_curl.txt
 ```
 
 ## Usage
-___
 ```bash
 $ python httpybench.py --help
 ```
@@ -56,6 +53,5 @@ Options:
  ```
 
 ## Disclaimer
-___
 This is not meant as a Denial Of Service tool, it would be a pretty bad one at that... It's basically meant to be an
 easy-to-use tool to benchmark endpoints for your applications, e.g. for testing microservices running locally. 
