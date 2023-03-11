@@ -16,6 +16,7 @@ DEFAULT_REQUESTS = 10
 DEFAULT_THREADS = 1
 DEFAULT_THREAD_CREATION_DELAY = 0
 DEFAULT_REFRESHTIME = 5
+DEFAULT_SAVEFILE = "results.json"
 
 result_queue = queue.Queue()
 worker_threads = []
@@ -94,12 +95,12 @@ def print_results(benchmark_time):
     print(table)
 
 
-def save_results():
-    filename = "results.json"
+def save_results(savefile):
+
     result_list = list(result_queue.queue)
 
     try:
-        with open(filename, "r+") as f:
+        with open(savefile, "r+") as f:
             try:
                 existing_data = json.load(f)
             except json.JSONDecodeError:
@@ -110,7 +111,7 @@ def save_results():
             json.dump(existing_data, f, indent=4, default=str)
             f.truncate()
     except FileNotFoundError:
-        with open(filename, "w") as f:
+        with open(savefile, "w") as f:
             existing_data = [result_list]
             json.dump(existing_data, f, indent=4, default=str)
     finally:
@@ -155,7 +156,6 @@ def start_threads(context, requests, refreshtime, number_of_threads, thread_crea
     print_results(benchmark_time)
 
 
-
 def main(
         file: Optional[typer.FileText] = typer.Argument(None,
                                                         help='Path to file containing a cURL command to run. Will use clipboard value if not provided. \033[1mMust only contain a single valid cURL command!\033[0m'),
@@ -169,6 +169,8 @@ def main(
                                         help='Number of seconds between cURL commands.', min=0),
         appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
         comment: str = typer.Option(None, "--comment", "-c", help='Optional comments.'),
+        savefile: str = typer.Option(DEFAULT_SAVEFILE, "--savefile", "-s", help='File to save results in json format.'),
+
 ):
     f = Figlet(font='slant')
     print(f.renderText('HttPyBench'))
@@ -190,7 +192,7 @@ def main(
     for t in worker_threads:
         t.join()
 
-    save_results()
+    save_results(savefile)
 
 
 if __name__ == "__main__":
