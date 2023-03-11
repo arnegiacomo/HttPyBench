@@ -88,12 +88,12 @@ def main(
         appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
         comment: str = typer.Option(None, "--comment", "-c", help='Optional comments.'),
 ):
-    if file is not None:
-        # If provided with file, read the contents of the file
-        curl = file.read()
+    if file is None:
+        # If not provided with file, get clipboard value
+        curl = pyperclip.paste().encode().decode('unicode_escape')
     else:
-        # Else get clipboard value
-        curl = pyperclip.paste()
+        # If provided with file, read the contents of the file
+        curl = file.read().encode().decode('unicode_escape')
 
     context = uncurl.parse_context(curl)
 
