@@ -37,6 +37,7 @@ def benchmark_worker(context, requests, request_delay):
     for i in range(requests):
 
         try:
+            print(f"[{threading.current_thread().name}] Sending request...")
             start_time = time.time()
             response = r.request(
                 method,
@@ -52,9 +53,9 @@ def benchmark_worker(context, requests, request_delay):
             if response.status_code == 200:
                 successes += 1
 
-            print(f"[{threading.current_thread().name}] Sent {method} request to {url}")
+            print(f"[{threading.current_thread().name}] Recieved response...")
             print(f"[{threading.current_thread().name}] Response status code: {response.status_code}")
-            print(f"[{threading.current_thread().name}] Response time: {delta_time:.2f} seconds")
+            print(f"[{threading.current_thread().name}] Response time: {round(delta_time * 1000)}ms")
 
         except requests.exceptions.ConnectionError as e:
             print(f"[{threading.current_thread().name}] Connection refused when sending request to {url}")
@@ -65,18 +66,27 @@ def benchmark_worker(context, requests, request_delay):
 
     average_response_time = sum(response_times) / len(response_times)
     median_response_time = statistics.median(response_times)
-    success_percentage = successes / requests * 100
+    success_rate = successes / requests
 
-    result = {
-        "Thread": threading.current_thread().name,
-        "Average response time": average_response_time,
-        "Median response time": median_response_time,
-        "Fastest response": min(response_times),
-        "Longest response": max(response_times),
-        "Successful responses": successes,
-        "Success rate": str(success_percentage) + "%",
-        "Response times": response_times
-    }
+    if requests > 1:
+        result = {
+            "Thread Name": threading.current_thread().name,
+            "Average response time": average_response_time,
+            "Median response time": median_response_time,
+            "Fastest response time": min(response_times),
+            "Slowest response time": max(response_times),
+            "Successful responses": successes,
+            "Success rate": success_rate,
+            "Response times": response_times
+        }
+    else:
+        result = {
+            "Thread Name": threading.current_thread().name,
+            "Response time": average_response_time,
+            "Successful responses": successes,
+            "Success rate": success_rate,
+            "Response times": response_times
+        }
 
     RESULT_QUEUE.put(result)
 
@@ -87,9 +97,26 @@ def print_results(benchmark_time):
     print(f"\nBenchmarks finished!")
     print(f"Total benchmark time: {benchmark_time}\n")
     result_list = []
+
     for result in RESULT_QUEUE.queue:
         result_without_response_times = {key: value for key, value in result.items() if key != "Response times"}
         result_list.append(result_without_response_times)
+
+    if len(result_list) > 1:
+        # Calculate the sum of values in the result_list using dictionary comprehension
+        sum_results = {k: sum(r[k] for r in result_list) for k in result_list[0] if k != "Thread Name"}
+
+        # Calculate the average of the values in the sum_results and create average_result
+        num_results = len(result_list)
+        average_result = {"Thread Name": "Average results", **{k: (v / num_results) for k, v in sum_results.items()}}
+
+        result_list.append(average_result)
+
+    for result in result_list:
+        result["Success rate"] = f"{result['Success rate'] * 100:.2f}%"
+        for key, value in result.items():
+            if key not in {"Success rate", "Successful responses", "Thread Name"}:
+                result[key] = f"{round(value * 1000)}ms"
 
     table = tabulate(result_list, headers="keys", tablefmt="grid")
     print(table)
