@@ -120,7 +120,7 @@ def save_results(benchmark_info, savefile):
         f.close()
 
 
-def print_run_info(context, requests, threads, thread_creation_delay, appname, comment, refreshtime):
+def print_run_info(context, requests, threads, thread_creation_delay, refreshtime):
     # Truncate the URL if it's longer than 60 characters
     truncated_url = context.url[:60] + "..." if len(context.url) > 60 else context.url
 
@@ -129,8 +129,6 @@ def print_run_info(context, requests, threads, thread_creation_delay, appname, c
         ["Request amount:", requests],
         ["Threads:", threads],
         ["Thread creation delay:", thread_creation_delay],
-        ["App name:", appname],
-        ["Comments:", comment],
         ["Refresh time:", refreshtime],
     ]
 
@@ -163,8 +161,6 @@ def main(
                                                   help='Delay between creation of worker threads.', min=0),
         refreshtime: int = typer.Option(DEFAULT_REFRESHTIME, "--refreshtime",
                                         help='Number of seconds between cURL commands.', min=0),
-        appname: str = typer.Option(None, "--name", "-n", help='Name of application.'),
-        comment: str = typer.Option(None, "--comment", "-c", help='Optional comments.'),
         savefile: str = typer.Option(None, "--savefile", "-s",
                                      help='File to save results in json format. Results will not be saved if omitted.'),
 
@@ -181,8 +177,6 @@ def main(
 
     context = uncurl.parse_context(curl)
     benchmark_info = {
-        "Application name": appname,
-        "Comment": comment,
         "Time": datetime.now(),
         "Context": context,
         "Number of requests": requests,
@@ -191,7 +185,7 @@ def main(
         "Time between requests": refreshtime
     }
 
-    print_run_info(context, requests, threads, thread_creation_delay, appname, comment, refreshtime)
+    print_run_info(context, requests, threads, thread_creation_delay, refreshtime)
 
     before_requests = datetime.now()
 
