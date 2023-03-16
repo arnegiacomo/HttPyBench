@@ -37,16 +37,14 @@ Arguments:
           command!
 
 Options:
-  -r, --requests INTEGER RANGE  Number of times to run cURL command on each worker thread.
-                                [default: 10; x>=1]
-  -t, --threads INTEGER RANGE   Number of worker threads to run cURL commands in
-                                parallel.  [default: 1; x>=1]
+  -r, --requests INTEGER RANGE  Number of times to run cURL command  on each
+                                worker thread.  [default: 10; x>=1]
+  -t, --threads INTEGER RANGE   Number of worker threads to run cURL commands
+                                in parallel.  [default: 1; x>=1]
   -d, --delay INTEGER RANGE     Delay between creation of worker threads.
                                 [default: 0; x>=0]
   --refreshtime INTEGER RANGE   Number of seconds between cURL commands.
                                 [default: 5; x>=0]
-  -n, --name TEXT               Name of application.
-  -c, --comment TEXT            Optional comments.
   -s, --savefile TEXT           File to save results in json format. Results
                                 will not be saved if omitted.
   --help                        Show this message and exit.
