@@ -37,7 +37,7 @@ Arguments:
           command!
 
 Options:
-  -r, --requests INTEGER RANGE  Number of times to run cURL command  on each
+  -r, --requests INTEGER RANGE  Number of times to run cURL command on each
                                 worker thread.  [default: 10; x>=1]
   -t, --threads INTEGER RANGE   Number of worker threads to run cURL commands
                                 in parallel.  [default: 1; x>=1]
