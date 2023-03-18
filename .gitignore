@@ -1,2 +1,4 @@
 /venv/
 /build/
+/httpybench.egg-info/
+/dist/httpybench-1.0-py3.9.egg

@@ -103,6 +103,8 @@ def print_results(benchmark_time):
         result_list.append(result_without_response_times)
 
     if len(result_list) > 1:
+        result_list = sorted(result_list, key=lambda x: x['Thread Name'])
+
         # Calculate the sum of values in the result_list using dictionary comprehension
         sum_results = {k: sum(r[k] for r in result_list) for k in result_list[0] if k != "Thread Name"}
 
@@ -127,6 +129,7 @@ def save_results(benchmark_info, savefile):
         return
 
     result_list = list(RESULT_QUEUE.queue)
+    result_list = sorted(result_list, key=lambda x: x['Thread Name'])
     result_list.insert(0, benchmark_info)
 
     try:
